@@ -2,46 +2,43 @@
 Contributors: Otto42
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=otto%40ottodestruct%2ecom
 Tags: facebook, connect, simple, otto, otto42, javascript, comments, share, status
-Requires at least: 3.0
-Tested up to: 3.1
-Stable tag: 0.25
+Requires at least: 3.2
+Tested up to: 3.3
+Stable Tag: 1.0
 
 == Description ==
 
-Simple Facebook Connect is a series of plugins that let you add any sort of Facebook Connect functionality you like to a WordPress blog. This lets you have an integrated site without a lot of coding, and still letting you customize it exactly the way you'd like.
+Simple Facebook Connect is a framework and series of sub-systems that let you add any sort of Facebook functionality you like to a WordPress blog. This lets you have an integrated site without a lot of coding, and still letting you customize it exactly the way you'd like.
 
-First, you activate and set up the base plugin, which makes your site have basic Facebook Connect functionality. Then, each of the add-on plugins will let you add small pieces of specific Facebook-related functionality, one by one.
+After activating the plugin and setting up a Facebook Application for your site, you can enable individual pieces of functionality to let you integrate your site in various ways.
+
+The plugin is also a developer framework for both the Graph API and the Facebook Javascript SDK, allowing you to make other custom plugins or theme modifications with much less code. The basics of Facebook integration are already handled by the core plugin, so just a few function calls can be made to contact Facebook systems and connect with them in various ways.
 
 Requires WordPress 3.0 and PHP 5. 
 
-**Current add-ons**
-
-* Comment using Facebook Identity (with FB avatar support)
-* Automatically Publish new posts to Facebook Profile or Fan Page
+* Enables your site to connect to Facebook with JS SDK
+* Implements OpenGraph tags, entirely automatically
+* Comment using Facebook credentials (with Facebook avatar support)
+* Automatically Publish new posts to Facebook Profile or Application or Fan Page
 * Manually Publish posts to FB Profile or Application or Fan Page
-* Login with your Facebook credentials
-* New user registration with Facebook credentials
-* Share button and Shortcode
-* Connect Button Widget and Shortcode
-* User Status Widget and Shortcode
-* Live Stream Widget and Shortcode
-* Bookmark Widget and Shortcode
-* Find us on Facebook button Widget and Shortcode
-* Fan Box Widget
+* Integrate comments made on Facebook back into your own site
+* Login with your Facebook credentials, optionally using Facebook avatars instead of Gravatars
+* New user registration with Facebook credentials (using the Facebook Registration Authentication system)
+* Facebook Photo Album integration in the Media uploader
+* Like Button and shortcode
+* User Status Widget and shortcode
+* Live Stream Widget and shortcode
+* Fan Box Widget and shortcode
 * Fan Count Chicklet and Widget
-* Like Button and Shortcode
 * Upcoming Events Widget
 * Activity Feed Widget
-
-**Coming soon**
-
-* (Got more ideas? Tell me!)
+* "Share" button and Shortcode (reworked version of Like button, as Share button is no longer supported by Facebook)
 
 If you have suggestions for a new add-on, feel free to email me at otto@ottodestruct.com .
 
 Want regular updates? Become a fan of my sites on Facebook!
-http://www.facebook.com/apps/application.php?id=116002660893
 http://www.facebook.com/ottopress
+http://www.facebook.com/apps/application.php?id=116002660893
 
 Or follow my sites on Twitter!
 http://twitter.com/ottodestruct
@@ -54,15 +51,7 @@ http://twitter.com/ottodestruct
 
 == Frequently Asked Questions ==
 
-= Whoa, what's with all these plugins? =
-
-The principle behind this plugin is to enable small pieces of Facebook Connect functionality, one at a time.
-
-Thus, you have the base plugin, which does nothing except to enable your site for XFBML and Facebook Connect in general. It's required by all the other plugins.
-
-Then you have individual plugins, one for each piece of functionality. One for enabling comments, one for adding a share button, etc. These are all smaller and simpler, for the most part, because they don't have to add all the Facebook Connect stuff that the base plugin adds.
-
-= The comments plugin isn't working! =
+= The comments addon isn't working! =
 
 You have to modify your theme to use the comments plugin.
 
@@ -85,39 +74,6 @@ That will add the necessary pieces to allow the script to work.
 
 If you're using WordPress 3.0 and the new "comments_form" code (like in the Twenty Ten theme), then this is unnecessary! Check ottopress.com for info on how to upgrade your theme to use the new 3.0 features.
 
-= The plugin causes an error with a missing "json_encode"! =
-
-I did say that this plugin was for WordPress 2.9 and up.
-
-If you are using PHP 5.2 and up, json_encode is built in. If not, then WordPress 2.9 contains a backwards compatible version of it. Either way, many of the plugins need this function in order to do the Facebook sharing functionality properly. 
-
-Instead of defining the function itself, it's relying on your code already having it available, whether it's through PHP or WordPress. WordPress 2.8.5 does NOT have this function, so unless you're running PHP 5.2 or up, many of the add-on plugins will not work with that version of WordPress.
-
-= The automatic "share" after the comments looks funky! Or, there's strange text showing up where it shouldn't be! =
-
-I have encountered other WordPress plugins which mess with the output created by the_excerpt. Since I'm using this to create the content for this piece of the share part, it's possible that there is another plugin interfering.
-
-To check this, view the source of the single post page. Near the bottom is a fair amount of javascript added by the comments plugin. One section in particular looks like this:
-`var attachment = {
- 'name':'Name of post',
- 'href':'http://example.com/blog/2009/post-name/',
- 'description':"Lorem ipsum dolor sit amet [...]",
- 'caption':'{*actor*} left a comment on Name of post',
- 'comments_xid':'http%3A%2F%2Fexample.com%2Fblog%2F2009%2Fpost-name%2F'
-};`
-
-If it looks messed up in any way, or if there's any extra text around that area, then you likely have some other plugin that breaks the usage of the_excerpt. You'll need to find and deactivate that plugin.
-
-= The automatic "share" after the comments shows the wrong post! =
-
-You have some plugin that is breaking the proper operation of The Loop. A lot of plugins that display some list of posts (like a list of most popular posts in the sidebar, or a recent comments list, etc) have been known to do this. These plugins were written incorrectly and need to be fixed. Look for updates to those plugins.
-
-Note that you *must* fix these plugins, or remove them. They can cause other issues as well, like comments being attached to the wrong posts and other oddities along those lines. This has been a long standing problem with many WordPress plugins and even some themes. If you cannot find the culprit, try the WordPress support forums. Be prepared to post code from your theme so that somebody can solve the problem for you.
-
-= Share doesn't work, Publish doesn't work =
-
-Check the page source. If you have a message in there that looks like this: "Warning: Cannot modify header information - headers already sent by ... in .../wp-includes/class-json.php on line 238", then you need to upgrade WordPress to 2.9.1. WordPress 2.9 had a minor bug that manifested itself as this error in some cases.
-
 = Facebook Avatars look wrong. =
 
 Facebook avatars use slightly different code than other avatars. They should style the same, but not all themes will have this working properly, due to various theme designs and such. 
@@ -125,24 +81,6 @@ Facebook avatars use slightly different code than other avatars. They should sty
 However, it is almost always possible to correct this with some simple CSS adjustments. For this reason, they are given an "fbavatar" class, for you to use to style them as you need. Just use .fbavatar in your CSS and add styling rules to correct those specific avatars.
 
 Also note that Facebook "square" avatars are limited to 50 by 50 pixels in size. If your theme uses a bigger one, then it'll get scaled up and may look bad. There's no easy fix for this, as the other avatars offered by Facebook are not square shaped. If it returned those, then it could mess up many more themes. complain to Facebook and tell them to offer larger squared off avatars.
-
-= The login plugin won't let me connect my accounts! =
-
-A new security feature in the login plugin is email validation.
-
-When you connect your account to Facebook, the plugin talks to Facebook behind the scenes and attempts to verify your email address. This means that your email on your WordPress account must match one of the email addresses attached to your Facebook account. If the matching process fails, you'll get an alert box telling you why it failed, and the accounts will not be linked.
-
-This is a very alpha process and I can't be sure I've worked all the bugs out. If you have a problem and you know that your two accounts share the same email address, then email me directly with the problem and I'll try to help you out and fix the plugin. Please include screenshots of your email address in both WordPress and Facebook to prove you've checked that possible problem, and also so I can check the code with that address myself.
-
-= Why can't I automatically publish to my Application? =
-
-Sorry, nothing I can do about it. There's a bug (or design flaw, if you prefer) on Facebook preventing this for Applications: http://bugs.developers.facebook.com/show_bug.cgi?id=8184
-
-When they fix it, I'll turn this feature on. The code is there and done, it just needs to have that bug fixed.
-
-Note that you should be able to auto-publish to Fan Pages just fine.
-
-In the meantime, the manual publishing button for an Application or Fan Page works correctly. And automatic publishing of new posts to your personal profile works fine. Note: If you use a multi-user blog, this will publish to the user profile of whoever is publishing the post. That user must also have granted the extended permissions for it to work. Different people may see different settings there, so anybody doing publishing must have granted that permission if they want the post sent to Facebook automatically in any format.
 
 = How do I use this Fanbox custom CSS option? =
 Well, first you have to learn CSS.
@@ -155,10 +93,6 @@ Next, try starting with this code in the custom CSS box:
 
 That should be enough to get you started.
 
-= The publish code doesn't process the NextGen gallery shortcodes! =
-
-Upgrade NextGen Gallery to 1.60 or later.
-
 = How do I use this with multi-site across subdomains/subdirectories? =
 
 (This is a new feature to 0.21 and it has NOT been really tested well yet. You have been warned.)
@@ -168,7 +102,6 @@ Many people want to set up a "network" of sites, and enable SFC across all of th
 First, create your Facebook Application. It should use the base domain field as well as the normal fields. No subdirectories or subdomains anywhere. For this example, we'll use "example.com".
 
 Next, you can add these to your site's wp-config:
-define('SFC_API_KEY', 'xxxxx');
 define('SFC_APP_SECRET', 'xxxxx');
 define('SFC_APP_ID', 'xxxxx');
 define('SFC_FANPAGE', '(this one is optional)');
@@ -188,28 +121,64 @@ Notes:
 
 Email me if you have problems... But only if you're also willing to help solve those problems, I can't reproduce most setups and I can't fix what I can't see.
 
+= How do I use Facebook Avatars? =
+
+The Comments module will automatically use Facebook avatars for users that leave comments using Facebook.
+
+The Login module can optionally make the system use Facebook avatars instead of Gravatars, for users that have connected their accounts to Facebook. This is disabled by default, because Facebook avatars are of much lower quality than Gravatars, and they do not look particularly good. However, to use FB Avatars anyway, add this line of code to your wp-config.php file:
+
+define('SFC_USE_FB_AVATARS',true);
+
+
 == Screenshots ==
 
-1. Simple Facebook Connect Main Admin Screen.
-2. Facebook share button in action.
-3. Facebook Comments login button.
-4. Facebook Connect button on the Login Screen.
-5. Facebook Publisher box in the Post editing screen.
-6. Connecting a WordPress account to a Facebook Account on the Profiles Page.
-7. Connected a WordPress account to a Facebook Account on the Profiles Page.
-8. Share button configuration
+1. Main Settings
+2. Sub-modules listing
+3. Facebook OpenGraph configuration and Avatar settings
+4. Dropdown for SFC-Login
+5. Connecting accounts between FB and WP
+6. Registration screen (non multi-site only)
+7. Photo album support
+8. Manual publishing
+9. FB Comments pull back
+10. Widgets
+11. Like and "Share" buttons
+12. Automatic Publishing
+13. Fan Box CSS customization
+
 
 == Upgrade Notice ==
 
-= 0.25 =
-* Sorry for yet another update, but the UTF8 publish bug affects a lot of international users, so I have to get it out there ASAP.
+= 1.0 =
+* MAJOR RELEASE. DEACTIVATE ALL PREVIOUS SFC PLUGINS BEFORE UPGRADING!
+* Required upgrade! Older versions will likely stop working eventually due to Facebook changes.
+* Entirely rewritten plugin. Will need some additional setup after upgrade.
+* See http://ottopress.com/2011/sfc-1-0-a-quick-walkthrough/ before upgrading!
+
 
 == Changelog ==
 
-= 0.26 =
+= 1.0 = 
+* Entirely rewritten plugin.
+* Graph API support.
+* OpenGraph support.
+* FB JS SDK support.
+* Registration model changed to use FB's new registration system.
+* Meta handling improved and centralized.
+* Publish reworked (app auto-publishing works now!)
+* Comments reworked (sharing comments to Facebook now happens entirely in the background)
+* Share removed and replaced with modified Like button (FB Share is no longer supported by Facebook, and incompatible with newer code)
+* "Send" option now available with Like button.
+* NEW Photo integration module
+* Widgets reworked
+* Deprecated widgets removed
+
+= 0.26 (never released) =
 * SFC-Login: Profile connection fix
 * SFC-Base: SSL admin fix (thanks to jwz)
 * SFC-Publish: Squeeze out max possible number of chars (jwz)
+* SFC-Publish: More filters on more things for more customization potential
+* SFC-Register: Remove admin nag for fb connected users (hattip: Stephan Muller)
 
 = 0.25 =
 * Fix UTF-8 encoding problem for non-English publishing.
