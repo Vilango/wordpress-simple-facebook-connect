@@ -1,10 +1,4 @@
-<?php
-
-add_action('wp_enqueue_scripts','sfc_share_enqueue');
-function sfc_share_enqueue() {
-//	wp_enqueue_script( 'fb-share', 'http://static.ak.fbcdn.net/connect.php/js/FB.Share', array(), '1', true);
-}
-	
+<?php	
 /**
  * Simple share button
  *

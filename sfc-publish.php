@@ -41,8 +41,19 @@ function sfc_publish_extended_callback() {
 
 ?><p><?php _e('In order for the SFC-Publish plugin to be able to publish your posts automatically, you must grant some "Extended Permissions"
 to the plugin.', 'sfc'); ?></p>
-<p><?php _e('To do so, click this button. After doing so, make sure to click "Save Changes" on this page.','sfc'); ?></p>
-<fb:login-button perms="offline_access,publish_stream,manage_pages"><fb:intl>Grant SFC Permissions</fb:intl></fb:login-button>
+<p><?php _e('To do so, click this button. This will also cause the page to refresh, in order to save the results.','sfc'); ?></p>
+<input type="hidden" id="token" name="sfc_options[access_token]" value="<?php echo $options['access_token']; ?>" />
+<script type="text/javascript">
+function sfcPubToken() {
+	FB.getLoginStatus(function(response) {
+		if (response.authResponse.accessToken) {
+			jQuery('#token').val(response.authResponse.accessToken);
+			jQuery('#submit').click();
+		}
+	});
+}
+</script>
+<fb:login-button scope="offline_access,publish_stream,manage_pages" onlogin="sfcPubToken();"><fb:intl>Grant SFC Permissions</fb:intl></fb:login-button>
 <?php
 }
 
@@ -100,9 +111,6 @@ function sfc_publish_meta_box( $post ) {
 		return;
 	}
 
-	// apply the content filters, in case some plugin is doing weird image stuff
-	$content = apply_filters('the_content', $post->post_content);
-
 	// look for the images/video to add with image_src
 	$images = sfc_base_find_images($post);
 	$video = sfc_base_find_video($post);
@@ -114,14 +122,17 @@ function sfc_publish_meta_box( $post ) {
  	$feed['method'] = 'feed';
  	$feed['display'] = 'iframe';
  	$permalink = apply_filters('sfc_publish_permalink',wp_get_shortlink($post->ID),$post->ID);
+ 	$real_permalink = get_permalink($post->ID);
  	$feed['link'] = $permalink;
 	if ($images) $feed['picture'] = $images[0];
 	if ($video) $feed['source'] = $video[''];
 	$feed['name'] = $post->post_title;
 	$feed['description'] = sfc_base_make_excerpt($post);
+	$feed['caption'] = ' ';
 	$actions[0]['name'] = 'Share';
 	$actions[0]['link'] = 'http://www.facebook.com/share.php?u='.urlencode($permalink);
-	$attachment['actions'] = json_encode($actions);
+	
+	$feed['actions'] = json_encode($actions);
 
 	// personal publish
 	$ui = $feed;
@@ -163,10 +174,10 @@ function sfc_publish_meta_box( $post ) {
 function sfc_publish_show_buttons() {
 ?>
 FB.getLoginStatus(function(response) {
-	if (response.session) {
+	if (response.authResponse) {
 		sfcShowPubButtons();
 	} else {
-		jQuery('#sfc-publish-buttons').html('<fb:login-button v="2" perms="offline_access,publish_stream" onlogin="sfcShowPubButtons();"><fb:intl><?php echo addslashes(__('Connect with Facebook', 'sfc')); ?></fb:intl></fb:login-button>');
+		jQuery('#sfc-publish-buttons').html('<fb:login-button v="2" scope="offline_access,publish_stream" onlogin="sfcShowPubButtons();"><fb:intl><?php echo addslashes(__('Connect with Facebook', 'sfc')); ?></fb:intl></fb:login-button>');
 		FB.XFBML.parse();
 	}
 });
@@ -199,9 +210,6 @@ function sfc_publish_automatic($id, $post) {
 
 	// build the post to send to FB
 
-	// apply the content filters, in case some plugin is doing weird image stuff
-	$content = apply_filters('the_content', $post->post_content);
-
 	// look for the images/video to add with image_src
 	$images = sfc_base_find_images($post);
 	$video = sfc_base_find_video($post);
@@ -214,6 +222,7 @@ function sfc_publish_automatic($id, $post) {
 	$attachment['name'] = $post->post_title;
 	$attachment['link'] = $permalink;
 	$attachment['description'] = sfc_base_make_excerpt($post);
+	$attachment['caption'] = ' ';
 	
 	if (!empty($images)) $attachment['picture'] = $images[0];
 	if (!empty($video)) $attachment['source'] = $video[''];
@@ -271,23 +280,21 @@ function sfc_publish_validate_options($input) {
 	if (isset($input['autopublish_profile']) && $input['autopublish_profile'] != 1) $input['autopublish_profile'] = 0;
 
 	unset($input['user']);
-	unset($input['access_token']);
 	unset($input['page_access_token']);
 	unset($input['app_access_token']);
 
 	// find the access token and save it if it's there
 	$cookie = sfc_cookie_parse();
-	if ($cookie && $cookie['expires'] === '0') {
-		$input['user'] = $cookie['uid'];
-		$input['access_token'] = $cookie['access_token'];
+	if ($input['access_token']) {
+		$input['user'] = $cookie['user_id'];
 
 		// for fan pages, we need to go get their access token
 		if ($input['fanpage']) {
 			// connect to FB, find a list of the available Pages
-			$data = wp_remote_get("https://graph.facebook.com/{$options['user']}/accounts?access_token={$input['access_token']}");
+			$data = wp_remote_get("https://graph.facebook.com/{$input['user']}/accounts?access_token={$input['access_token']}", array('sslverify'=>false));
 			if (!is_wp_error($data)) {
 				$pages = json_decode($data['body'],true);
-				if (is_array($pages)) foreach ($pages['data'] as $page) {
+				if ( is_array( $pages ) && isset( $pages['data'] ) ) foreach ($pages['data'] as $page) {
 					if ($page['id'] == $input['fanpage']) {
 						$input['page_access_token'] = $page['access_token'];
 						break;
@@ -297,7 +304,7 @@ function sfc_publish_validate_options($input) {
 		}
 
 		// get application access token
-		$data = wp_remote_get("https://graph.facebook.com/oauth/access_token?client_id={$input['appid']}&client_secret={$input['app_secret']}&type=client_cred");
+		$data = wp_remote_get("https://graph.facebook.com/oauth/access_token?client_id={$input['appid']}&client_secret={$input['app_secret']}&type=client_cred", array('sslverify'=>false));
 		if (!is_wp_error($data)) {
 			$token = $data['body'];
 			if (strpos($token,'access_token=') !== false) {

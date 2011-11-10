@@ -23,7 +23,7 @@ function sfc_login_profile_page($profile) {
 	$fbuid = get_user_meta($profile->ID, 'fbuid', true);
 	if (empty($fbuid)) {
 		?>
-			<td><p><fb:login-button perms="email" v="2" size="large" onlogin="sfc_login_update_fbuid(0);"><fb:intl><?php _e('Connect this WordPress account to Facebook', 'sfc'); ?></fb:intl></fb:login-button></p></td>
+			<td><p><fb:login-button scope="email" v="2" size="large" onlogin="sfc_login_update_fbuid(0);"><fb:intl><?php _e('Connect this WordPress account to Facebook', 'sfc'); ?></fb:intl></fb:login-button></p></td>
 		</tr>
 	</table>
 	<?php
@@ -79,7 +79,7 @@ function sfc_login_ajax_update_fbuid() {
 		// get the id from the cookie
 		$cookie = sfc_cookie_parse();
 		if (empty($cookie)) { echo 1; exit; }
-		$fbuid = $cookie['uid'];
+		$fbuid = $cookie['user_id'];
 	} else {
 		if (!SFC_ALLOW_DISCONNECT) { echo 1; exit(); }
 		$fbuid = 0;
@@ -93,7 +93,7 @@ function sfc_login_ajax_update_fbuid() {
 add_action('login_form','sfc_login_add_login_button');
 function sfc_login_add_login_button() {
 	global $action;
-	if ($action == 'login') echo '<p><fb:login-button v="2" perms="email,user_website" onlogin="window.location.reload();" /></p><br />';
+	if ($action == 'login') echo '<p><fb:login-button v="2" scope="email,user_website" onlogin="window.location.reload();" /></p><br />';
 }
 
 // add the fb icon to the admin bar, showing you're connected via FB login
@@ -104,6 +104,28 @@ function sfc_login_admin_header($links) {
 	$icon = plugins_url('/images/fb-icon.png', __FILE__);
 	if ($fbuid) $links[6]="<a href='http://www.facebook.com/profile.php?id=$fbuid'><img src='$icon' /> Facebook</a>";
 	return $links;
+}
+
+// add the Facebook menu item to the admin bar (3.3+) 
+add_action( 'add_admin_bar_menus', 'sfc_add_admin_bar' );
+function sfc_add_admin_bar() {
+	add_action( 'admin_bar_menu', 'sfc_admin_bar_my_account_menu', 11 );
+}
+function sfc_admin_bar_my_account_menu( $wp_admin_bar ) {
+	$user = wp_get_current_user();
+	$fbuid = get_user_meta($user->ID, 'fbuid', true);
+
+	if ($fbuid) {
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'my-account',
+			'id'     => 'facebook-profile',
+			'title'  => __( 'Facebook Profile' ),
+			'href' => "http://www.facebook.com/profile.php?id={$fbuid}",
+			'meta'   => array(
+				'class' => 'user-info-item',
+			),
+		) );
+	}
 }
 
 // do the actual authentication
@@ -120,7 +142,7 @@ function sfc_login_check($user) {
 	if (empty($cookie)) return $user;
 
 	// the cookie is signed using our secret, so if we get it back from sfc_cookie_parse, then it's authenticated. So just log the user in.
-	$fbuid=$cookie['uid'];
+	$fbuid=$cookie['user_id'];
 	if($fbuid) {
 		global $wpdb;
 		$user_id = $wpdb->get_var( $wpdb->prepare("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'fbuid' AND meta_value = %s", $fbuid) );

@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=otto%
 Tags: facebook, connect, simple, otto, otto42, javascript, comments, share, status
 Requires at least: 3.2
 Tested up to: 3.3
-Stable Tag: 1.0
+Stable Tag: 1.1
 
 == Description ==
 
@@ -30,7 +30,6 @@ Requires WordPress 3.0 and PHP 5.
 * Live Stream Widget and shortcode
 * Fan Box Widget and shortcode
 * Fan Count Chicklet and Widget
-* Upcoming Events Widget
 * Activity Feed Widget
 * "Share" button and Shortcode (reworked version of Like button, as Share button is no longer supported by Facebook)
 
@@ -149,14 +148,27 @@ define('SFC_USE_FB_AVATARS',true);
 
 == Upgrade Notice ==
 
-= 1.0 =
-* MAJOR RELEASE. DEACTIVATE ALL PREVIOUS SFC PLUGINS BEFORE UPGRADING!
-* Required upgrade! Older versions will likely stop working eventually due to Facebook changes.
-* Entirely rewritten plugin. Will need some additional setup after upgrade.
-* See http://ottopress.com/2011/sfc-1-0-a-quick-walkthrough/ before upgrading!
-
+= 1.1 =
+REQUIRED UPGRADE. All previous versions of SFC will STOP WORKING on October 1st due to Facebook's new mandatory OAuth 2.0 upgrade. See http://developers.facebook.com/docs/oauth2-https-migration/ for more information.
 
 == Changelog ==
+
+= 1.1 = 
+* OAuth 2.0 upgrade. Signed requests are now used exclusively.
+* Added SFC_LOCALE define to allow users to override the FB Locale string in the wp-config.php file.
+* Filter sfc_register_fields added for adding new fields to the registration screen.
+* Comments init script added back to allow anon FB "logged in" users to show up automatically in comments form
+* Comments fixed for OAuth 2.0 issues
+* Comemnts share fixed to have Read Post action links and comment text as FB post content
+* Plugin screen action links fixed
+* Slightly better publish permissions interface (auto-submit on button click)
+* Caption bug in publisher fixed (published items won't show the domain name as the caption anymore)
+* SSL problems fixed for hosts that had them
+* Activity feed widget fix (FB made a non-backward compatible change to the XFBML code)
+* Locale issues worked around. Non-recognized locales will get en_US locale. Future versions may fix this better, but this will at least let the plugin function.
+* Swapped AppID/Secret field order to be more like how FB displays them
+* sfc_is_fan function fixed and re-enabled
+* Image and Video meta scanning improved. Still has minor problems with YouTube HTML5 capable iframe code, however works fine with most oEmbed code.
 
 = 1.0 = 
 * Entirely rewritten plugin.

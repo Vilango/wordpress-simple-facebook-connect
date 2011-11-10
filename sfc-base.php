@@ -46,27 +46,32 @@ function sfc_add_base_js() {
 
 function sfc_load_api($appid) {
 
-	// validate that they're using a valid locale string
-	$sfc_valid_fb_locales = array(
-		'ca_ES', 'cs_CZ', 'cy_GB', 'da_DK', 'de_DE', 'eu_ES', 'en_PI', 'en_UD', 'ck_US', 'en_US', 'es_LA', 'es_CL', 'es_CO', 'es_ES', 'es_MX',
-		'es_VE', 'fb_FI', 'fi_FI', 'fr_FR', 'gl_ES', 'hu_HU', 'it_IT', 'ja_JP', 'ko_KR', 'nb_NO', 'nn_NO', 'nl_NL', 'pl_PL', 'pt_BR', 'pt_PT',
-		'ro_RO', 'ru_RU', 'sk_SK', 'sl_SI', 'sv_SE', 'th_TH', 'tr_TR', 'ku_TR', 'zh_CN', 'zh_HK', 'zh_TW', 'fb_LT', 'af_ZA', 'sq_AL', 'hy_AM',
-		'az_AZ', 'be_BY', 'bn_IN', 'bs_BA', 'bg_BG', 'hr_HR', 'nl_BE', 'en_GB', 'eo_EO', 'et_EE', 'fo_FO', 'fr_CA', 'ka_GE', 'el_GR', 'gu_IN',
-		'hi_IN', 'is_IS', 'id_ID', 'ga_IE', 'jv_ID', 'kn_IN', 'kk_KZ', 'la_VA', 'lv_LV', 'li_NL', 'lt_LT', 'mk_MK', 'mg_MG', 'ms_MY', 'mt_MT',
-		'mr_IN', 'mn_MN', 'ne_NP', 'pa_IN', 'rm_CH', 'sa_IN', 'sr_RS', 'so_SO', 'sw_KE', 'tl_PH', 'ta_IN', 'tt_RU', 'te_IN', 'ml_IN', 'uk_UA',
-		'uz_UZ', 'vi_VN', 'xh_ZA', 'zu_ZA', 'km_KH', 'tg_TJ', 'ar_AR', 'he_IL', 'ur_PK', 'fa_IR', 'sy_SY', 'yi_DE', 'gn_PY', 'qu_PE', 'ay_BO',
-		'se_NO', 'ps_AF', 'tl_ST'
-	);
-	
-	$locale = get_locale();
-	if ( !in_array($locale, $sfc_valid_fb_locales) ) {
-		$locale = 'en_US';	// default if they're using one FB doesn't like
+	// allow locale overrides
+	if ( defined( 'SFC_LOCALE' ) ) {
+		$locale = SFC_LOCALE;
+	} else {
+		// validate that they're using a valid locale string
+		$sfc_valid_fb_locales = array(
+			'ca_ES', 'cs_CZ', 'cy_GB', 'da_DK', 'de_DE', 'eu_ES', 'en_PI', 'en_UD', 'ck_US', 'en_US', 'es_LA', 'es_CL', 'es_CO', 'es_ES', 'es_MX',
+			'es_VE', 'fb_FI', 'fi_FI', 'fr_FR', 'gl_ES', 'hu_HU', 'it_IT', 'ja_JP', 'ko_KR', 'nb_NO', 'nn_NO', 'nl_NL', 'pl_PL', 'pt_BR', 'pt_PT',
+			'ro_RO', 'ru_RU', 'sk_SK', 'sl_SI', 'sv_SE', 'th_TH', 'tr_TR', 'ku_TR', 'zh_CN', 'zh_HK', 'zh_TW', 'fb_LT', 'af_ZA', 'sq_AL', 'hy_AM',
+			'az_AZ', 'be_BY', 'bn_IN', 'bs_BA', 'bg_BG', 'hr_HR', 'nl_BE', 'en_GB', 'eo_EO', 'et_EE', 'fo_FO', 'fr_CA', 'ka_GE', 'el_GR', 'gu_IN',
+			'hi_IN', 'is_IS', 'id_ID', 'ga_IE', 'jv_ID', 'kn_IN', 'kk_KZ', 'la_VA', 'lv_LV', 'li_NL', 'lt_LT', 'mk_MK', 'mg_MG', 'ms_MY', 'mt_MT',
+			'mr_IN', 'mn_MN', 'ne_NP', 'pa_IN', 'rm_CH', 'sa_IN', 'sr_RS', 'so_SO', 'sw_KE', 'tl_PH', 'ta_IN', 'tt_RU', 'te_IN', 'ml_IN', 'uk_UA',
+			'uz_UZ', 'vi_VN', 'xh_ZA', 'zu_ZA', 'km_KH', 'tg_TJ', 'ar_AR', 'he_IL', 'ur_PK', 'fa_IR', 'sy_SY', 'yi_DE', 'gn_PY', 'qu_PE', 'ay_BO',
+			'se_NO', 'ps_AF', 'tl_ST'
+		);
+
+		$locale = get_locale();
+		if ( !in_array($locale, $sfc_valid_fb_locales) ) {
+			$locale = 'en_US';	// default if they're using one FB doesn't like
+		}
 	}
 ?>
 <div id="fb-root"></div>
 <script type="text/javascript">
   window.fbAsyncInit = function() {
-    FB.init({appId: '<?php echo $appid; ?>', status: true, cookie: true, xfbml: true });
+    FB.init({appId: '<?php echo $appid; ?>', status: true, cookie: true, xfbml: true, oauth: true });
     <?php do_action('sfc_async_init'); // do any other actions sub-plugins might need to do here ?>
   };
   (function() {
@@ -91,8 +96,8 @@ function sfc_admin_init(){
 	wp_enqueue_script('jquery');
 	register_setting( 'sfc_options', 'sfc_options', 'sfc_options_validate' );
 	add_settings_section('sfc_main', __('Main Settings', 'sfc'), 'sfc_section_text', 'sfc');
-	if (!defined('SFC_APP_SECRET')) add_settings_field('sfc_app_secret', __('Facebook Application Secret', 'sfc'), 'sfc_setting_app_secret', 'sfc', 'sfc_main');
 	if (!defined('SFC_APP_ID')) add_settings_field('sfc_appid', __('Facebook Application ID', 'sfc'), 'sfc_setting_appid', 'sfc', 'sfc_main');
+	if (!defined('SFC_APP_SECRET')) add_settings_field('sfc_app_secret', __('Facebook Application Secret', 'sfc'), 'sfc_setting_app_secret', 'sfc', 'sfc_main');
 	if (!defined('SFC_FANPAGE')) add_settings_field('sfc_fanpage', __('Facebook Fan Page', 'sfc'), 'sfc_setting_fanpage', 'sfc', 'sfc_main');
 
 	add_settings_section('sfc_plugins', __('SFC Plugins', 'sfc'), 'sfc_plugins_text', 'sfc');
@@ -244,14 +249,16 @@ function sfc_setting_app_secret() {
 	$options = get_option('sfc_options');
 	echo "<input type='text' id='sfcappsecret' name='sfc_options[app_secret]' value='{$options['app_secret']}' size='40' /> ";
 	_e('(required)', 'sfc');
+	if (!empty($options['appid'])) printf(__('<p>Here is a <a href=\'http://www.facebook.com/apps/application.php?id=%s&amp;v=wall\'>link to your applications wall</a>. There you can give it a name, upload a profile picture, things like that. Look for the "Edit Application" link to modify the application.</p>', 'sfc'), $options['appid']);
 }
+
 function sfc_setting_appid() {
 	if (defined('SFC_APP_ID')) return;
 	$options = get_option('sfc_options');
 	echo "<input type='text' id='sfcappid' name='sfc_options[appid]' value='{$options['appid']}' size='40' /> ";
 	_e('(required)', 'sfc');
-	if (!empty($options['appid'])) printf(__('<p>Here is a <a href=\'http://www.facebook.com/apps/application.php?id=%s&amp;v=wall\'>link to your applications wall</a>. There you can give it a name, upload a profile picture, things like that. Look for the "Edit Application" link to modify the application.</p>', 'sfc'), $options['appid']);
 }
+
 function sfc_setting_fanpage() {
 	if (defined('SFC_FANPAGE')) return;
 	$options = get_option('sfc_options'); ?>
@@ -319,7 +326,7 @@ function sfc_default_description() {
 // validate our options
 function sfc_options_validate($input) {
 	if (!defined('SFC_APP_SECRET')) {
-		// api keys are 32 bytes long and made of hex values
+		// secrets are 32 bytes long and made of hex values
 		$input['app_secret'] = trim($input['app_secret']);
 		if(! preg_match('/^[a-f0-9]{32}$/i', $input['app_secret'])) {
 		  $input['app_secret'] = '';
@@ -350,17 +357,14 @@ function sfc_options_validate($input) {
 function sfc_cookie_parse() {
 	$options = get_option('sfc_options');
 	$args = array();
-	parse_str(trim($_COOKIE['fbs_' . $options['appid']], '\\"'), $args);
-	ksort($args);
-	$payload = '';
-	foreach ($args as $key => $value) {
-		if ($key != 'sig') {
-			$payload .= $key . '=' . $value;
+	
+	if (list($encoded_sig, $payload) = explode('.', $_COOKIE['fbsr_'. $options['appid']], 2) ) {
+		$sig = sfc_base64_url_decode($encoded_sig);  
+		if (hash_hmac('sha256', $payload, $options['app_secret'], true) == $sig) {
+			$args = json_decode(sfc_base64_url_decode($payload), true);
 		}
 	}
-	if (md5($payload . $options['app_secret']) != $args['sig']) {
-		return null;
-	}
+	
 	return $args;
 }
 
@@ -370,10 +374,15 @@ function sfc_base64_url_decode($input) {
     return base64_decode(strtr($input, '-_', '+/'));
 }
 
-/*
+
 // this function checks if the current FB user is a fan of your page.
 // Returns true if they are, false otherwise.
 function sfc_is_fan($pageid='0') {
+	$user = sfc_cookie_parse();
+	if (!isset($user['user_id'])) {
+		return false; // user isn't "connected", so we don't know who they are, so we can't check to see if they're a fan
+	}
+
 	$options = get_option('sfc_options');
 
 	if ($pageid == '0') {
@@ -381,48 +390,29 @@ function sfc_is_fan($pageid='0') {
 		else $pageid = $options['appid'];
 	}
 
-	include_once 'facebook-platform/facebook.php';
-	$fb=new Facebook($options['api_key'], $options['app_secret']);
+	if ($options['fanpage']) $token = $options['page_access_token'];
+	else $token = $options['app_access_token'];
 
-	$fbuid=$fb->get_loggedin_user();
+	$fbresp = sfc_remote($user['user_id'], "likes/{$pageid}", array('access_token'=>$token));
 
-	if (!$fbuid) return false;
-
-	if ($fb->api_client->pages_isFan($pageid) ) {
+	if ( isset( $fbresp['data'][0]['name'] ) ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-// get the current facebook user number (0 if the user is not connected to this site)
-function sfc_get_user() {
-	$options = get_option('sfc_options');
-	include_once 'facebook-platform/facebook.php';
-	$fb=new Facebook($options['api_key'], $options['app_secret']);
-	$fbuid=$fb->get_loggedin_user();
-	return $fbuid;
-}
-*/
-
 function sfc_remote($obj, $connection='', $args=array(), $type = 'GET') {
 
 	$type = strtoupper($type);
 	
-	//if (empty($obj)) return null;
-	
-	if (empty($args['access_token'])) {
-		$cookie = sfc_cookie_parse();
-		if (!empty($cookie['access_token'])) {
-			$args['access_token'] = $cookie['access_token'];
-		}
-	}
-	
+	if (empty($obj)) return null;
+		
 	$url = 'https://graph.facebook.com/'. $obj;
 	if (!empty($connection)) $url .= '/'.$connection;
-	if ($type == 'GET') $url .= sfc_add_url_seperator($url).'access_token='.$args['access_token'];
+	if ($type == 'GET') $url .= '?'.http_build_query($args);
+	$args['sslverify']=false;
 
-  //echo "url: ".$url.$args;
 	if ($type == 'POST') {
 		$data = wp_remote_post($url, $args);
 	} else if ($type == 'GET') {
@@ -435,14 +425,6 @@ function sfc_remote($obj, $connection='', $args=array(), $type = 'GET') {
 	}
 	
 	return false;
-}
-function sfc_add_url_seperator($url) {
-  $pos = strpos($url, '?');
-  if ($pos !== false) {
-    return "&";
-  } else {
-    return "?";
-  }
 }
 
 // code to create a pretty excerpt given a post object
@@ -484,12 +466,13 @@ function sfc_base_make_excerpt($post) {
 
 // code to find any and all images in a post's actual content, given a post object (returns array of urls)
 // this should give the best representative sample of images from the post to push to FB
-function sfc_base_find_images($post) { 
+function sfc_base_find_images(&$post) { 
 	
 	$images = array();
 	
 	// first we apply the filters to the content, just in case they're using shortcodes or oembed to display images
-	$content = apply_filters('the_content', $post->post_content);
+	if ($post->filtered_content) $content = $post->filtered_content;
+	else $content = $post->filtered_content = apply_filters('the_content', $post->post_content);
 	
 	// next, we get the post thumbnail, put it first in the image list
 	if ( current_theme_supports('post-thumbnails') && has_post_thumbnail($post->ID) ) {
@@ -498,16 +481,23 @@ function sfc_base_find_images($post) {
 		if (!empty($att[0])) {
 			$images[] = $att[0];
 		}
-	} 
+	}
+	
+	if (is_attachment() && 	preg_match('!^image/!', get_post_mime_type( $post ))) {	
+	    $images[] = wp_get_attachment_url($post->ID);
+	}
 	
 	// now search for images in the content itself
-	if ( preg_match_all('/<img (.+?)>/', $content, $matches) ) {
+	if ( preg_match_all('/<img\s+(.+?)>/', $content, $matches) ) {
 		foreach($matches[1] as $match) {
 			foreach ( wp_kses_hair($match, array('http')) as $attr)
-				$img[$attr['name']] = $attr['value'];
+				$img[strtolower($attr['name'])] = $attr['value'];
 			if ( isset($img['src']) ) {
 				if ( !isset( $img['class'] ) || ( isset( $img['class'] ) && false === straipos( $img['class'], apply_filters( 'sfc_img_exclude', array( 'wp-smiley' ) ) ) ) ) { // ignore smilies
-					if ( !in_array( $img['src'], $images ) && strpos( $img['src'], 'fbcdn.net' ) === false ) {
+					if ( !in_array( $img['src'], $images ) 
+						&& strpos( $img['src'], 'fbcdn.net' ) === false // exclude any images on facebook's CDN
+						&& strpos( $img['src'], '/plugins/' ) === false // exclude any images put in from plugin dirs
+						) {
 						$images[] = $img['src'];
 					}
 				}
@@ -519,20 +509,24 @@ function sfc_base_find_images($post) {
 }
 
 // tries to find any video content in a post for meta stuff (only finds first video embed)
-function sfc_base_find_video($post) {
+function sfc_base_find_video(&$post) {
 
 	$vid = array();
 	
 	// first we apply the filters to the content, just in case they're using shortcodes or oembed to display videos
-	$content = apply_filters('the_content', $post->post_content);
+	if ($post->filtered_content) $content = $post->filtered_content;
+	else $content = $post->filtered_content = apply_filters('the_content', $post->post_content);
 
 	// look for an embed to add with video_src (simple, just add first embed)
-	if ( preg_match('/<embed (.+?)>/', $content, $matches) ) {
+	if ( preg_match('/<embed\s+(.+?)>/i', $content, $matches) ) {
 		foreach ( wp_kses_hair($matches[1], array('http')) as $attr) 
-			$embed[$attr['name']] = $attr['value'];
+			$embed[strtolower($attr['name'])] = $attr['value'];
 		
 		$embed['src'] = preg_replace('/&.*$/','', $embed['src']);
-		
+		if (preg_match('@http://[^/]*?youtube\.com/@i', $embed['src']) ) {
+			$embed['src'] = preg_replace('/[?&#].*$/','', $embed['src']);
+		}
+
 		if ( isset($embed['src']) ) $vid[''] = $embed['src'];
 		if ( isset($embed['height']) ) $vid[':height'] = $embed['height'];
 		if ( isset($embed['width']) ) $vid[':width'] = $embed['width'];
@@ -546,6 +540,9 @@ function sfc_base_find_video($post) {
 add_action('wp_head','sfc_base_meta');
 function sfc_base_meta() {
 	global $post;
+	
+	$fbmeta = array();
+	
 	$options = get_option('sfc_options');
 	// exclude bbPress post types 
 	if ( function_exists('bbp_is_custom_post_type') && bbp_is_custom_post_type() ) return;
@@ -562,54 +559,63 @@ function sfc_base_meta() {
 		$content = sfc_base_make_excerpt($post);
 		$images = sfc_base_find_images($post);
 		$video = sfc_base_find_video($post);
-		
-		if (preg_match('|http://[^/]*youtube\.com/v/([^/?&]+)|i', $video[''], $matches) ) {
-		
+		if (!empty($video) && preg_match('@http://[^/]*?youtube\.com/(?:v/|p/|embed/p/|embed/|watch\?[vp]=)([^/?&]+)@i', $video[''], $matches) ) {
 			array_unshift($images, "http://img.youtube.com/vi/{$matches[1]}/0.jpg");
 		}
 		
 		$title = get_the_title();
 		$permalink = get_permalink();
-
-		echo "<meta property='og:type' content='article' />\n";
-		echo "<meta property='og:title' content='". esc_attr($title) ."' />\n";
-		echo "<meta property='og:url' content='". esc_url($permalink) ."' />\n";
-		echo "<meta property='og:description' content='". esc_attr($content) ."' />\n";
 		
+		$fbmeta['og:type'] = 'article';
+		$fbmeta['og:title'] = esc_attr($title);
+		$fbmeta['og:url'] = esc_url($permalink);
+		$fbmeta['og:description'] = esc_attr($content);
+
 		if (!empty($images)) {
 			foreach ($images as $image) {
-				echo "<meta property='og:image' content='{$image}' />\n";
-				echo "<link rel='image_src' href='{$image}' />\n";
+				$fbmeta['og:image'][] = $image;
 			}
 		} else if (!empty($options['default_image'])) {
-			echo "<meta property='og:image' content='{$options['default_image']}' />\n";
-			echo "<link rel='image_src' href='{$options['default_image']}' />\n";
+			$fbmeta['og:image'][] = $options['default_image'];
 		}
 		
 		if (!empty($video)) {
 			foreach ($video as $type=>$value) {
-				echo "<meta property='og:video{$type}' href='{$value}' />\n";
+				$fbmeta["og:video{$type}"][] = $value;
 			}
 		}
 	} else { // non singular pages need images and descriptions too
 		if (!empty($options['default_image'])) {
-			echo "<meta property='og:image' content='{$options['default_image']}' />\n";
-			echo "<link rel='image_src' href='{$options['default_image']}' />\n";
+			$fbmeta['og:image'][] = $options['default_image'];
 		}
 		if (!empty($options['default_description'])) { 
-			echo "<meta property='og:description' content='". esc_attr($options['default_description']) ."' />\n";
+			$fbmeta['og:description'] = esc_attr($options['default_description']);
 		}
 	}
 		
 	if (is_home()) {
-		echo "<meta property='og:type' content='blog' />\n";
-		echo "<meta property='og:title' content='". get_bloginfo("name") ."' />\n";
-		echo "<meta property='og:url' content='". esc_url(get_bloginfo("url")) ."' />\n";
+		$fbmeta['og:type'] = 'blog';
+		$fbmeta['og:title'] = get_bloginfo("name");
+		$fbmeta['og:url'] = esc_url(get_bloginfo("url"));
 	}
 	
 	// stuff on all pages
-	echo "<meta property='og:site_name' content='". get_bloginfo("name") ."' />\n";
-	echo "<meta property='fb:app_id' content='".esc_attr($options["appid"])."' />\n";
+	$fbmeta['og:site_name'] = get_bloginfo("name");
+	$fbmeta['fb:app_id'] = esc_attr($options["appid"]);
+	
+	$fbmeta = apply_filters('sfc_base_meta',$fbmeta);
+	
+	foreach ($fbmeta as $prop=>$content) {
+		if (is_array($content)) {
+			foreach ($content as $item) {
+				echo "<meta property='{$prop}' content='{$item}' />\n";
+				if ($prop == 'og:image') echo "<link rel='image_src' href='{$item}' />\n";
+			}
+		} else {
+			echo "<meta property='{$prop}' content='{$content}' />\n";
+			if ($prop == 'og:image') echo "<link rel='image_src' href='{$content}' />\n";
+		}
+	}
 }
 
 // finds a item from an array in a string

@@ -1,5 +1,4 @@
 <?php
-
 // force load jQuery (we need it later anyway)
 add_action('wp_enqueue_scripts','sfc_comm_jquery');
 function sfc_comm_jquery() {
@@ -25,7 +24,7 @@ add_action('alt_comment_login','sfc_comm_login_button');
 add_action('comment_form_before_fields', 'sfc_comm_login_button',10,0); // WP 3.0 support
 
 function sfc_comm_login_button() {
-	echo '<p><fb:login-button v="2" perms="email,user_website,publish_stream" onlogin="sfc_update_user_details();"><fb:intl>'.__('Connect with Facebook', 'sfc').'</fb:intl></fb:login-button></p>';
+	echo '<p><fb:login-button v="2" scope="email,user_website,publish_stream" onlogin="sfc_update_user_details();"><fb:intl>'.__('Connect with Facebook', 'sfc').'</fb:intl></fb:login-button></p>';
 }
 
 // this exists so that other plugins (simple twitter connect) can hook into the same place to add their login buttons
@@ -74,16 +73,9 @@ function sfc_comm_avatar($avatar, $id_or_email, $size = '96', $default = '', $al
 // store the FB user ID as comment meta data ('fbuid')
 add_action('comment_post','sfc_comm_add_meta', 10, 1);
 function sfc_comm_add_meta($comment_id) {
-	$cookie = sfc_cookie_parse();
-	if (empty($cookie)) return;
-
-	$uid = $cookie['uid'];
-	$token = $cookie['access_token'];
-
-	if (!empty($uid)) {
-		update_comment_meta($comment_id, 'fbuid', $cookie['uid']);
-	}
-
+	$uid = $_POST['sfc_user_id'];
+	$token = $_POST['sfc_user_token'];
+	
 	// did the user select to share the post on FB?
 	if (!empty($_POST['sfc_comm_share']) && !empty($uid) && !empty($token)) {
 
@@ -95,12 +87,13 @@ function sfc_comm_add_meta($comment_id) {
 		$attachment['description'] = sfc_base_make_excerpt($post);
 		$attachment['caption'] = '{*actor*} left a comment on '.get_the_title($postid);
 		$attachment['message'] = get_comment_text($comment_id);
-		$attachment['comments_xid'] = urlencode($permalink);
+	
+		$actions[0]['name'] = 'Read Post';
+		$actions[0]['link'] = $permalink;
 
-		//$action_links[0]['text'] = 'Read Post';
-		//$action_links[0]['href'] = get_permalink();
+		$attachment['actions'] = json_encode($actions);
 
-		$url = "https://graph.facebook.com/{$uid}/feed";
+		$url = "https://graph.facebook.com/{$uid}/feed&access_token={$token}";
 		$attachment['access_token'] = $token;
 
 		$data = wp_remote_post($url, array('body'=>$attachment));
@@ -110,6 +103,21 @@ function sfc_comm_add_meta($comment_id) {
 			if ($resp['id']) update_comment_meta($comment_id,'_fb_post_id',$resp['id']);
 		}
 	}
+	
+	if ( !empty($uid) && !empty($token) ) {
+		// validate token
+		$url = "https://graph.facebook.com/{$uid}/?fields=name,email,website&access_token={$token}";
+
+		$data = wp_remote_get($url, array('sslverify'=>false));
+
+		if (!is_wp_error($data)) {
+			$json = json_decode($data['body'],true);
+			if ( !empty( $json['name'] ) ) {		
+				update_comment_meta($comment_id, 'fbuid', $uid);
+			}
+		}
+	}
+
 }
 
 // Add user fields for FB commenters
@@ -117,17 +125,14 @@ add_filter('pre_comment_on_post','sfc_comm_fill_in_fields');
 function sfc_comm_fill_in_fields($comment_post_ID) {
 	if (is_user_logged_in()) return; // do nothing to WP users
 
-	$cookie = sfc_cookie_parse();
-	if (empty($cookie)) return;
-
-	$uid = $cookie['uid'];
-	$token = $cookie['access_token'];
+	$uid = $_POST['sfc_user_id'];
+	$token = $_POST['sfc_user_token'];
 
 	if (empty($uid) || empty($token)) return; // need both of these to get the data from FB
 
 	$url = "https://graph.facebook.com/{$uid}/?fields=name,email,website&access_token={$token}";
 
-	$data = wp_remote_get($url);
+	$data = wp_remote_get($url, array('sslverify'=>false));
 
 	if (!is_wp_error($data)) {
 		$json = json_decode($data['body'],true);
@@ -157,19 +162,36 @@ function sfc_comm_footer_script() {
 
 <script type="text/javascript">
 function sfc_update_user_details() {
-	// Show their FB details TODO this should be configurable, or at least prettier...
-	if (!jQuery('#fb-user').length) {
-		jQuery('#comment-user-details').hide().after("<span id='fb-user'>" +
-		"<fb:profile-pic uid='loggedinuser' facebook-logo='true' size='s'></fb:profile-pic>" +
-		"<span id='fb-msg'><strong><fb:intl><?php echo addslashes(__('Hi', 'sfc')); ?></fb:intl> <fb:name uid='loggedinuser' useyou='false'></fb:name>!</strong><br /><fb:intl><?php echo addslashes(__('You are connected with your Facebook account.', 'sfc')); ?></fb:intl>" +
-		"<a href='#' onclick='FB.logout(function(response) { window.location = \"<?php the_permalink() ?>\"; }); return false;'> <?php echo addslashes(__('Logout', 'sfc')); ?></a>" +
-		"</span><span class='end'></span></span>");
-		jQuery('#sfc_comm_send').html('<input style="width: auto;" type="checkbox" id="sfc_comm_share" name="sfc_comm_share" /><label for="sfc_comm_share"><fb:intl><?php echo addslashes(__('Share Comment on Facebook', 'sfc')); ?></fb:intl></label>');
-	}
+	FB.getLoginStatus(function(response) {
+		if (response.authResponse) {
+			// Show their FB details TODO this should be configurable, or at least prettier...
+			if (!jQuery('#fb-user').length) {
+				jQuery('#comment-user-details').hide().after("<span id='fb-user'>" +
+				"<fb:profile-pic uid='loggedinuser' facebook-logo='true' size='s'></fb:profile-pic>" +
+				"<span id='fb-msg'><strong><fb:intl><?php echo addslashes(__('Hi', 'sfc')); ?></fb:intl> <fb:name uid='loggedinuser' useyou='false'></fb:name>!</strong><br /><fb:intl><?php echo addslashes(__('You are connected with your Facebook account.', 'sfc')); ?></fb:intl>" +
+				"<a href='#' onclick='FB.logout(function(response) { window.location = \"<?php the_permalink() ?>\"; }); return false;'> <?php echo addslashes(__('Logout', 'sfc')); ?></a>" +
+				"</span><span class='end'></span></span>" + 
+				"<input type='hidden' name='sfc_user_id' value='"+response.authResponse.userID+"' />"+
+				"<input type='hidden' name='sfc_user_token' value='"+response.authResponse.accessToken+"' />");
+				jQuery('#sfc_comm_send').html('<input style="width: auto;" type="checkbox" id="sfc_comm_share" name="sfc_comm_share" /><label for="sfc_comm_share"><fb:intl><?php echo addslashes(__('Share Comment on Facebook', 'sfc')); ?></fb:intl></label>');
+			}
 
-	// Refresh the DOM
-	FB.XFBML.parse();
+			// Refresh the DOM
+			FB.XFBML.parse();
+		} 
+	});
 }
 </script>
+<?php
+}
+
+add_action('sfc_async_init','sfc_comm_check_script',40);
+function sfc_comm_check_script() {
+	global $sfc_comm_comments_form;
+	if ($sfc_comm_comments_form != true) return; // nothing to do, not showing comments
+	
+	if ( is_user_logged_in() ) return; // don't bother with this stuff for logged in users
+?>
+sfc_update_user_details();
 <?php
 }

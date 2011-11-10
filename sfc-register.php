@@ -17,7 +17,7 @@ remove_action('login_form','sfc_login_add_login_button');
 add_action('login_form','sfc_register_add_login_button');
 function sfc_register_add_login_button() {
 	global $action;
-	if ($action == 'login') echo '<p><fb:login-button v="2" registration-url="'.site_url('wp-login.php?action=register', 'login').'" perms="email,user_website" onlogin="window.location.reload();" /></p><br />';
+	if ($action == 'login') echo '<p><fb:login-button v="2" registration-url="'.site_url('wp-login.php?action=register', 'login').'" scope="email,user_website" onlogin="window.location.reload();" /></p><br />';
 }
 
 add_action('register_form','sfc_register_form');

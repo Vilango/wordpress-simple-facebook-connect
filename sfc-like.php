@@ -23,7 +23,7 @@ function get_sfc_like_button($args='') {
 	$args = wp_parse_args($args, $sfc_like_defaults);
 	extract($args);
 
-	if (empty($url)) $url = urlencode(get_permalink($id));
+	if (empty($url)) $url = get_permalink($id);
 
 	return "<fb:like href='{$url}' send='{$send}' layout='{$layout}' show_faces='{$showfaces}' width='{$width}' height='{$height}' action='{$action}' colorscheme='{$colorscheme}' font='{$font}'></fb:like>";
 }
