@@ -406,13 +406,20 @@ function sfc_remote($obj, $connection='', $args=array(), $type = 'GET') {
 
 	$type = strtoupper($type);
 	
-	if (empty($obj)) return null;
-		
+	//if (empty($obj)) return null;
 	$url = 'https://graph.facebook.com/'. $obj;
 	if (!empty($connection)) $url .= '/'.$connection;
-	if ($type == 'GET') $url .= '?'.http_build_query($args);
+	
+	if (empty($args['access_token'])) {
+		$cookie = sfc_cookie_parse();
+		if (!empty($cookie['access_token'])) {
+			$args['access_token'] = $cookie['access_token'];
+		}
+	}
+	if ($type == 'GET') $url .= sfc_add_url_seperator($url).http_build_query($args);
 	$args['sslverify']=false;
 
+  //echo "url: ".$url.$args;
 	if ($type == 'POST') {
 		$data = wp_remote_post($url, $args);
 	} else if ($type == 'GET') {
@@ -425,6 +432,14 @@ function sfc_remote($obj, $connection='', $args=array(), $type = 'GET') {
 	}
 	
 	return false;
+}
+function sfc_add_url_seperator($url) {
+  $pos = strpos($url, '?');
+  if ($pos !== false) {
+    return "&";
+  } else {
+    return "?";
+  }
 }
 
 // code to create a pretty excerpt given a post object

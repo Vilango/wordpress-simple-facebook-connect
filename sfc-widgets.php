@@ -695,3 +695,158 @@ class SFC_Live_Stream_Widget extends WP_Widget {
 	}
 }
 add_action('widgets_init', create_function('', 'return register_widget("SFC_Live_Stream_Widget");'));
+
+/**
+* Event Widget
+*/
+
+// Shortcode for putting it into pages or posts directly
+// profile id is required. Won't work without it.
+// Usefull urls:
+//  https://graph.facebook.com/?ids=125567530872614,179562078781810,250861738270467
+//  https://graph.facebook.com/oauth/access_token?client_id=199870906740151&client_secret=48c32cf4f7e57c74dc98abdd5c16c5c7&type=client_cred
+//  https://graph.facebook.com/birkenbihlsprachen/events?access_token=199870906740151|7pRc9_RjTVkUIxWo1q7T4f351I4
+
+/**
+ * Events as a shortcode
+ * *
+ * Example use: [fb-events id="123"]
+ */
+function sfc_events_shortcode($atts) {
+  //$options = get_option('sfc_options');
+  extract(shortcode_atts(array(
+    'id' => 0, 'full'=>'false'
+    ), $atts));
+	return "<div class='shortcode-events'>".get_sfc_upcoming_events($id, false, $full)."</div>";
+}
+add_shortcode('fb-events', 'sfc_events_shortcode');
+
+function sfc_upcoming_events($uid) {
+  echo "<div class='widget-events'>".get_sfc_upcoming_events($uid, true)."</div>";
+}  
+/// ADDED CODE //  END
+
+// produce a list of upcoming events for a given facebook user
+function get_sfc_upcoming_events($uid, $widgetmode, $fullmode = false) {
+	if (!$uid) return;
+
+  $cache_id = $uid."_".$fullmode;
+  $cached_events = get_transient($cache_id);
+  
+  if ( $cached_events !== false ) return $cached_events;
+	$options = get_option('sfc_options');
+	
+	// get application access token
+	$token_url = "https://graph.facebook.com/oauth/access_token?client_id={$options['appid']}&client_secret={$options['app_secret']}&type=client_cred";
+	
+	$data = wp_remote_get($token_url);
+	if (!is_wp_error($data)) {
+		$token = $data['body'];
+		if (strpos($token,'access_token=') !== false) {
+			$token = str_replace('access_token=','',$token);
+		}
+	}
+
+  $events_list = sfc_remote($uid, 'events', array('access_token'=>$token, 'timeout' => 60));
+	//echo "X-".$uid.": [".$events_list."]<br/>";
+  
+	if (!$events_list) return;
+	
+	$event_ids = sfc_upcoming_get_id_list($events_list, $fullmode);
+	$events = sfc_remote("?ids=".$event_ids, null, array('timeout' => 60));
+  
+  //echo "<br/>X";
+  //print_r($events);
+	$events_sorted = sfc_upcoming_sort($events, 'start_time');
+	
+	foreach ($events_sorted as $event) {
+		$ret_events .= get_sfc_upcoming_event_output($event, $widgetmode);
+	}
+
+	set_transient($cache_id, $ret_events, 5*60); // 60*60 = 1 hour cache
+	return $ret_events;
+}
+
+function get_sfc_upcoming_event_output($event, $widgetmode) {
+  $tile_link = "<a href='http://www.facebook.com/event.php?eid=".$event["id"]."&locale=de_DE'>".$event["name"]."</a>";
+  
+	if ($widgetmode) {
+  	$ret  = "<div class='event-date'>".date_i18n('d.m.Y', strtotime($event["start_time"]))."</div>";
+  	$ret .= "<div class='event-title'>".$tile_link."</div>";
+	} else {
+  	$ret  = "<div class='event-date'>".date_i18n('d.m.Y', strtotime($event["start_time"]))." - ".$tile_link."</div>";
+  	$ret .= "<div class='event-desc'>".$event["description"]."</div>";
+  	$ret .= "<div class='event-location'>".$event["location"]."</div>";
+  	$ret .= "<div class='event-address'>".trim($event["venue"]["street"]).($event["venue"]["city"] ? ", ".$event["venue"]["city"]:"")."</div>";
+	}
+	
+	
+  return "<div class='event'>".$ret."</div>";
+}
+
+function sfc_upcoming_get_id_list($array, $fullmode) {
+	$s = "";
+	$yesterday = mktime(0, 0, 0, date("m"), date("d")-1, date("y"));
+	foreach($array['data'] as $row) {
+	  if (strtotime($row["start_time"]) > $yesterday) {
+	    $s .= $row['id'].",";   
+	  }
+	}
+	$s = rtrim($s, ",");
+	return $s;
+}
+
+function sfc_upcoming_sort($array, $column) {
+	$s = array();
+	foreach($array as $row)	$s[] = strtotime($row[$column]);
+	array_multisort($s, SORT_ASC, SORT_NUMERIC, $array);
+	return $array;
+}
+
+class SFC_Upcoming_Widget extends WP_Widget {
+	function SFC_Upcoming_Widget() {
+		$widget_ops = array('classname' => 'widget_sfc-upcoming', 'description' => __('Facebook Upcoming Events', 'sfc'));
+		$this->WP_Widget('sfc-upcoming', __('Facebook Upcoming Events (SFC)', 'sfc'), $widget_ops);
+	}
+
+	function widget($args, $instance) {
+		extract( $args );
+		$title = apply_filters('widget_title', $instance['title']);
+		$appid = $options['appid'];
+		$id = $instance['id'];
+		?>
+		<?php echo $before_widget; ?>
+		<?php if ( $title ) echo $before_title . $title . $after_title; ?>
+		<?php sfc_upcoming_events($id); ?>
+		<?php echo $after_widget; ?>
+		<?php
+	}
+	
+
+	function update($new_instance, $old_instance) {
+		$instance = $old_instance;
+		$new_instance = wp_parse_args( (array) $new_instance, array( 'title' => '') );
+		$instance['title'] = strip_tags($new_instance['title']);
+		$instance['id'] = strip_tags($new_instance['id']);
+		return $instance;
+	}
+
+	function form($instance) {
+		$instance = wp_parse_args( (array) $instance, array( 'title' => '') );
+		$title = strip_tags($instance['title']);
+		$id = strip_tags($instance['id']);
+		$access_token = esc_attr($instance['access_token']);
+		echo "{".$access_token."}"
+		?>
+<p><label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:'); ?> 
+<input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo $title; ?>" />
+</label></p>
+<p><label for="<?php echo $this->get_field_id('ID'); ?>"><?php _e('User ID:'); ?>  
+<input class="widefat" id="<?php echo $this->get_field_id('id'); ?>" name="<?php echo $this->get_field_name('id'); ?>" type="text" value="<?php echo $id; ?>" />
+</label></p>
+<p>(<?php _e('The User ID can also be a Group ID, a Fan Page ID, or an Application ID.', 'sfc'); ?>)</p>
+		<?php
+	}
+}
+add_action('widgets_init', create_function('', 'return register_widget("SFC_Upcoming_Widget");'));
+
